@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文件资源库</title>
+</head>
+<body>
+  <h1>文件资源库</h1>
+  <p>
+    访问文件地址: https://cdn.jsdelivr.net/gh/lin09/images/${hashPath}
+  </p>
+  <p>
+    hash = 32位的文件MD5hash
+  </p>
+  <p>
+    hashPath = hash.replace(/^(.{2})(.{2})/, "$1/$2/")
+  </p>
+  <hr />
+  <h3>
+    例如：
+  </h3>
+  <p>
+    hash -> e5439d2a29828e6cd27695149658fdca
+  </p>
+  <p>
+    hashPath -> e5/43/9d2a29828e6cd27695149658fdca
+  </p>
+  <p>
+    文件地址 -> https://cdn.jsdelivr.net/gh/lin09/images/e5/43/9d2a29828e6cd27695149658fdca
+  </p>
+</body>
+</html>
