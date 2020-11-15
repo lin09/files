@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/view-design@4.3.2/dist/styles/iview.css">
+  <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.19/lodash.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.11/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/view-design@4.3.2/dist/iview.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <Spin v-if="loading"></Spin>
+    <div v-else>
+      <span>优化展开。收起是没法优化，应该没人会展开到1000+吧。。。</span>
+      <Tree :data="treeData" @on-select-change="selectChange" @on-toggle-expand="toggleExpand"></Tree>
+      <hr>
+      <span>原版</span>
+      <Tree :data="sourceData"></Tree>
+    </div>
+  </div>
+  <script>
+    window.onload = function () {
+      const getData = () =>
+        new Promise((resolve) => {
+          const data = [
+            { title: "parent 1", children: [] },
+            { title: "parent 2", children: [] }
+          ];
+          for (let i = 1; i <= 2000; i++) {
+            data[0].children.push({ title: "leaf 1-" + i, children: [] });
+          }
+          for (let i = 1; i <= 2000; i++) {
+            data[0].children[0].children.push({ title: "leaf 1-1-" + i, children: [] });
+          }
+          for (let i = 1; i <= 2000; i++) {
+            data[1].children.push({ title: "leaf 2-" + i, children: [] });
+          }
+          setTimeout(() => {
+            resolve(data);
+          }, 500);
+        });
+
+      new Vue({
+        el: "#app",
+        data: {
+          treeData: [],
+          sourceData: [],
+          loading: false
+        },
+        mounted() {
+          this.loading = true;
+          getData().then(data => {
+            this.sourceData = data;
+            this.treeData = this.expandData();
+          }).finally(() => {
+            this.loading = false;
+          });
+        },
+        methods: {
+          /**
+           * 控制展开的数量
+           * @param {Image} childrenPath    - 子元素组的路径
+           * @param {Image} start           - 截取子元素组的开始下标
+           * @param {Image} num             - 截取数量
+           **/
+          expandData(childrenPath = "", start = 0, num = 100) {
+            let data = childrenPath
+              ? _.get(this.sourceData, childrenPath)
+              : this.sourceData;
+
+            const length = data.length;
+
+            data = _.cloneDeep(_.slice(data, start, start + num));
+
+            _.forEach(data, (item, index) => {
+              if (item.children.length > num) {
+                // 子元素组的路径
+                item.childrenPath = `${childrenPath}[${index}].children`;
+                // 元素组的数量多于截取数量时，只留下一个。在用户点击展开后，再初始化 item.children
+                item.children = [item.children[0]];
+                item.children[0].children = [];
+              }
+            });
+
+            start = start + num;
+            if (length > start) {
+              // 添加更多项，当用户点击此项时，再截取数据到子元素组
+              data.push({ title: "...", childrenPath, start });
+            }
+
+            return data;
+          },
+          selectChange(arr, item) {
+            if (item.title === "...") {
+              // 用户点击更多项
+              if (item.childrenPath) {
+                const children = _.get(this.treeData, item.childrenPath);
+                _.set(this.treeData, item.childrenPath, [
+                  ..._.slice(children, 0, children.length - 1),       // 去掉更多项
+                  ...this.expandData(item.childrenPath, item.start)   // 追加数据
+                ]);
+              } else {
+                this.treeData = [
+                  ..._.slice(this.treeData, 0, this.treeData.length - 1),  // 去掉更多项
+                  ...this.expandData("", item.start)
+                ];
+              }
+            }
+          },
+          toggleExpand(item) {
+            if (item.childrenPath) {
+              if (item.expand) {
+                item.children = this.expandData(item.childrenPath);
+              } else {
+                item.children = [
+                  _.get(this.sourceData, item.childrenPath)[0]
+                ];
+              }
+            }
+          }
+        },
+      });
+    };
+  </script>
+</body>
+</html>
